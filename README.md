@@ -54,14 +54,6 @@ Kept deliberately simple, single-module engine:
 
 Global state was a deliberate choice over a more elaborate OOP architecture — for a single local-play mode with a handful of screens, it keeps the code direct without unnecessary abstraction overhead. Win conditions run BFS twice per move: once ignoring cut edges (checks if Saboteur already won) and once considering only reinforced edges (checks if Router already won).
 
-## Roadmap
-
-- [ ] Online multiplayer
-- [ ] More languages via a key-based translation system
-- [ ] Save/load matches
-- [ ] Solo mode AI
-- [ ] Custom map editor
-
 ## License
 
 Licensed under [AGPL-3.0](LICENSE).
