@@ -1,7 +1,7 @@
 #include "engine.h"
 #include "font8x8.h"
 
-std::string BUILD_VERSION = "v1.0.0";
+std::string BUILD_VERSION = "v1.0.1";
 bool isDarkMode = true;
 Language currentLang = LANG_EN;
 
@@ -265,29 +265,36 @@ float pointToLineDist(int px, int py, int x1, int y1, int x2, int y2) {
 void handleGameMouseClick(int mouseX, int mouseY) {
     if (status != PLAYING) return;
 
-    for (auto& edge : edges) {
+    int bestEdgeIdx = -1;
+    float bestDist = 18.0f; 
+
+    for (size_t i = 0; i < edges.size(); ++i) {
+        const auto& edge = edges[i];
         int x1 = nodes[edge.u].x, y1 = nodes[edge.u].y;
         int x2 = nodes[edge.v].x, y2 = nodes[edge.v].y;
 
-        if (pointToLineDist(mouseX, mouseY, x1, y1, x2, y2) < 18.0f) { 
-            if (currentTurn == TURN_ROUTER && edge.state == NORMAL) {
-                edge.state = REINFORCED;
-                currentTurn = TURN_SABOTEUR;
-                updateWinConditions();
-                return;
-            } 
-            else if (currentTurn == TURN_SABOTEUR) {
-                if (edge.state == NORMAL) {
-                    edge.state = CUT;
-                    currentTurn = TURN_ROUTER;
-                    updateWinConditions();
-                    return;
-                }
-            }
+        float dist = pointToLineDist(mouseX, mouseY, x1, y1, x2, y2);
+        if (dist < bestDist) {
+            bestDist = dist;
+            bestEdgeIdx = static_cast<int>(i);
         }
     }
-}
 
+    if (bestEdgeIdx == -1) return;
+
+    Edge& edge = edges[bestEdgeIdx];
+
+    if (currentTurn == TURN_ROUTER && edge.state == NORMAL) {
+        edge.state = REINFORCED;
+        currentTurn = TURN_SABOTEUR;
+        updateWinConditions();
+    }
+    else if (currentTurn == TURN_SABOTEUR && edge.state == NORMAL) {
+        edge.state = CUT;
+        currentTurn = TURN_ROUTER;
+        updateWinConditions();
+    }
+}
 void handleMainMenuClick(int mouseX, int mouseY) {
     if (mouseX >= 250 && mouseX <= 550) {
         if (mouseY >= 200 && mouseY <= 260) appState = STATE_TIME_SELECT; 
