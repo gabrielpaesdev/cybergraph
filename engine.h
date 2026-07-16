@@ -40,8 +40,9 @@ extern std::vector<Edge> edges;
 extern GameTurn currentTurn;
 extern GameStatus status;
 extern AppState appState;
+extern bool soundEnabled;
 
-// Chess Clock Variables
+// Clock Variables
 extern int initialTimeSeconds;
 extern float routerTimeLeft;
 extern float saboteurTimeLeft;
@@ -56,10 +57,10 @@ SDL_Color GetColorYellow();
 SDL_Color GetColorBlue();
 SDL_Color GetColorGray();
 
-// --- Localization Helper ---
+
 std::string Tr(const std::string& pt, const std::string& en);
 
-// Removemos o parâmetro TTF_Font* e colocamos void* (ou simplesmente remova)
+
 void RenderText(SDL_Renderer* renderer, void* unused, const std::string& text, int x, int y, SDL_Color color, bool center = false);
 void DrawFilledCircle(SDL_Renderer* renderer, int x0, int y0, int radius);
 void DrawThickLine(SDL_Renderer* renderer, int x1, int y1, int x2, int y2, int thickness);
