@@ -1,8 +1,11 @@
 #include "engine.h"
 #include "font8x8.h"
+#include "sfx.h"
+#include <thread>
 
-std::string BUILD_VERSION = "v1.0.1";
+std::string BUILD_VERSION = "v1.1.0";
 bool isDarkMode = true;
+bool soundEnabled = true;
 Language currentLang = LANG_EN;
 
 std::vector<Node> nodes;
@@ -34,7 +37,7 @@ std::string Tr(const std::string& pt, const std::string& en) {
 
 void RenderText(SDL_Renderer* renderer, void* unused, const std::string& text, int x, int y, SDL_Color color, bool center) {
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-    int scale = 2; 
+    int scale = 2;
     if (center) x -= (text.length() * 8 * scale) / 2;
 
     for (char c : text) {
@@ -57,8 +60,8 @@ void RenderText(SDL_Renderer* renderer, void* unused, const std::string& text, i
 void DrawFilledCircle(SDL_Renderer* renderer, int x0, int y0, int radius) {
     for (int w = 0; w < radius * 2; w++) {
         for (int h = 0; h < radius * 2; h++) {
-            int dx = radius - w; 
-            int dy = radius - h; 
+            int dx = radius - w;
+            int dy = radius - h;
             if ((dx * dx + dy * dy) <= (radius * radius)) {
                 SDL_RenderDrawPoint(renderer, x0 + dx, y0 + dy);
             }
@@ -84,13 +87,12 @@ void DrawThickLine(SDL_Renderer* renderer, int x1, int y1, int x2, int y2, int t
     }
 }
 
-// --- Procedural Topology Generation ---
 void generateProceduralGraph(int cols, int rows) {
     nodes.clear();
     edges.clear();
     std::srand(std::time(nullptr));
 
-    nodes.push_back({0, 50, 300}); // Source
+    nodes.push_back({0, 50, 300});
 
     int startId = 1;
     int xSpacing = 700 / (cols + 1);
@@ -106,7 +108,7 @@ void generateProceduralGraph(int cols, int rows) {
     }
 
     int targetId = cols * rows + 1;
-    nodes.push_back({targetId, 750, 300}); // Destination
+    nodes.push_back({targetId, 750, 300});
 
     int edgeId = 0;
 
@@ -121,7 +123,7 @@ void generateProceduralGraph(int cols, int rows) {
     for (int i = 0; i < rows; ++i) startCols[i] = i;
     for (int i = rows - 1; i > 0; --i) std::swap(startCols[i], startCols[std::rand() % (i + 1)]);
 
-    int minStart = (rows <= 3) ? 3 : (rows <= 5) ? 4 : 5; 
+    int minStart = (rows <= 3) ? 3 : (rows <= 5) ? 4 : 5;
     std::vector<bool> col0HasIn(rows, false);
 
     for (int i = 0; i < minStart && i < rows; ++i) {
@@ -129,7 +131,7 @@ void generateProceduralGraph(int cols, int rows) {
         col0HasIn[startCols[i]] = true;
     }
     for (int i = minStart; i < rows; ++i) {
-        if (std::rand() % 100 > 10) { 
+        if (std::rand() % 100 > 10) {
             addEdge(0, startId + startCols[i]);
             col0HasIn[startCols[i]] = true;
         }
@@ -139,17 +141,17 @@ void generateProceduralGraph(int cols, int rows) {
         if (!col0HasIn[r]) {
             int u = startId + r;
             int neighbor = (r > 0) ? (u - 1) : (u + 1);
-            addEdge(neighbor, u); 
+            addEdge(neighbor, u);
         }
     }
 
     for (int c = 0; c < cols - 1; ++c) {
         for (int r = 0; r < rows; ++r) {
             int u = startId + c * rows + r;
-            addEdge(u, u + rows); 
-            if (r > 0       && std::rand() % 100 > 35) addEdge(u, u + rows - 1); 
-            if (r < rows-1  && std::rand() % 100 > 35) addEdge(u, u + rows + 1); 
-            if (r < rows-1  && std::rand() % 100 > 45) addEdge(u, u + 1);        
+            addEdge(u, u + rows);
+            if (r > 0       && std::rand() % 100 > 35) addEdge(u, u + rows - 1);
+            if (r < rows-1  && std::rand() % 100 > 35) addEdge(u, u + rows + 1);
+            if (r < rows-1  && std::rand() % 100 > 45) addEdge(u, u + 1);
         }
     }
 
@@ -157,7 +159,7 @@ void generateProceduralGraph(int cols, int rows) {
     for (int i = 0; i < rows; ++i) endCols[i] = i;
     for (int i = rows - 1; i > 0; --i) std::swap(endCols[i], endCols[std::rand() % (i + 1)]);
 
-    int minEnd = (rows <= 3) ? 3 : (rows <= 5) ? 4 : 5; 
+    int minEnd = (rows <= 3) ? 3 : (rows <= 5) ? 4 : 5;
     std::vector<bool> lastColHasOut(rows, false);
 
     for (int i = 0; i < minEnd && i < rows; ++i) {
@@ -165,7 +167,7 @@ void generateProceduralGraph(int cols, int rows) {
         lastColHasOut[endCols[i]] = true;
     }
     for (int i = minEnd; i < rows; ++i) {
-        if (std::rand() % 100 > 10) { 
+        if (std::rand() % 100 > 10) {
             addEdge(startId + (cols - 1) * rows + endCols[i], targetId);
             lastColHasOut[endCols[i]] = true;
         }
@@ -218,7 +220,7 @@ void generateProceduralGraph(int cols, int rows) {
 bool checkPathExists(bool onlyReinforced) {
     std::vector<bool> visited(nodes.size(), false);
     std::queue<int> q;
-    
+
     q.push(0);
     visited[0] = true;
     int targetNodeId = nodes.size() - 1;
@@ -247,8 +249,10 @@ bool checkPathExists(bool onlyReinforced) {
 void updateWinConditions() {
     if (!checkPathExists(false)) {
         status = SABOTEUR_WINS;
+        if (soundEnabled) std::thread(play_vicsab).detach();
     } else if (checkPathExists(true)) {
         status = ROUTER_WINS;
+        if (soundEnabled) std::thread(play_vicrou).detach();
     }
 }
 
@@ -266,7 +270,7 @@ void handleGameMouseClick(int mouseX, int mouseY) {
     if (status != PLAYING) return;
 
     int bestEdgeIdx = -1;
-    float bestDist = 18.0f; 
+    float bestDist = 18.0f;
 
     for (size_t i = 0; i < edges.size(); ++i) {
         const auto& edge = edges[i];
@@ -286,18 +290,20 @@ void handleGameMouseClick(int mouseX, int mouseY) {
 
     if (currentTurn == TURN_ROUTER && edge.state == NORMAL) {
         edge.state = REINFORCED;
+        if (soundEnabled) play_connect();
         currentTurn = TURN_SABOTEUR;
         updateWinConditions();
     }
     else if (currentTurn == TURN_SABOTEUR && edge.state == NORMAL) {
         edge.state = CUT;
+        if (soundEnabled) play_disconnect();
         currentTurn = TURN_ROUTER;
         updateWinConditions();
     }
 }
 void handleMainMenuClick(int mouseX, int mouseY) {
     if (mouseX >= 250 && mouseX <= 550) {
-        if (mouseY >= 200 && mouseY <= 260) appState = STATE_TIME_SELECT; 
+        if (mouseY >= 200 && mouseY <= 260) appState = STATE_TIME_SELECT;
         else if (mouseY >= 300 && mouseY <= 360) appState = STATE_OPTIONS;
         else if (mouseY >= 400 && mouseY <= 460) appState = STATE_CREDITS;
     }
@@ -310,7 +316,7 @@ void handleTimeSelectClick(int mouseX, int mouseY) {
         else if (mouseY >= 280 && mouseY <= 330) { initialTimeSeconds = 180; appState = STATE_LEVEL_SELECT; }
         else if (mouseY >= 350 && mouseY <= 400) { initialTimeSeconds = 300; appState = STATE_LEVEL_SELECT; }
         else if (mouseY >= 420 && mouseY <= 470) { initialTimeSeconds = 600; appState = STATE_LEVEL_SELECT; }
-        else if (mouseY >= 500 && mouseY <= 540) { appState = STATE_MAIN_MENU; } 
+        else if (mouseY >= 500 && mouseY <= 540) { appState = STATE_MAIN_MENU; }
     }
 }
 
@@ -326,22 +332,24 @@ void handleLevelSelectClick(int mouseX, int mouseY) {
             generateProceduralGraph(8, 6);
             appState = STATE_PLAYING;
         } else if (mouseY >= 500 && mouseY <= 540) {
-            appState = STATE_TIME_SELECT; 
+            appState = STATE_TIME_SELECT;
         }
     }
 }
 
 void handleOptionsClick(int mouseX, int mouseY) {
     if (mouseX >= 250 && mouseX <= 550) {
-        if (mouseY >= 250 && mouseY <= 310) {
-            isDarkMode = !isDarkMode; 
-        } else if (mouseY >= 450 && mouseY <= 510) {
-            appState = STATE_MAIN_MENU; 
+        if (mouseY >= 150 && mouseY <= 210) {
+            isDarkMode = !isDarkMode;
+        } else if (mouseY >= 230 && mouseY <= 290) {
+            soundEnabled = !soundEnabled;
+        } else if (mouseY >= 430 && mouseY <= 490) {
+            appState = STATE_MAIN_MENU;
         }
     }
-    
-    
-    if (mouseY >= 370 && mouseY <= 420) {
+
+
+    if (mouseY >= 310 && mouseY <= 370) {
         if (mouseX >= 250 && mouseX <= 390) currentLang = LANG_EN;
         else if (mouseX >= 410 && mouseX <= 550) currentLang = LANG_PT;
     }
