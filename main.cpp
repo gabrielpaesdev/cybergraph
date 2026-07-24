@@ -1,3 +1,20 @@
+/*
+ * Program: CyberGraph
+ * Description: A turn-based tactical game built on graph theory, where two players fight for control of a network.
+ *
+ * Copyright (C) 2026 Gabriel Paes
+ * Contact: <gabrielpaesdev@proton.me>
+ *
+ * This program is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation, either version 3
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See <https://www.gnu.org/licenses/> for details.
+ */
 #include "engine.h"
 
 int main(int argc, char* argv[]) {
@@ -125,9 +142,12 @@ int main(int argc, char* argv[]) {
         }
         else if (appState == STATE_CREDITS) {
             RenderText(renderer, nullptr, Tr("CREDITOS", "CREDITS"), 400, 100, primaryText, true);
-            RenderText(renderer, nullptr, "Gabriel Paes", 400, 250, GetColorYellow(), true);
-            RenderText(renderer, nullptr, "2026", 400, 290, primaryText, true);
-            RenderText(renderer, nullptr, "gabrielpaesdev@proton.me", 400, 330, GetColorGreen(), true);
+
+            RenderText(renderer, nullptr, "Copyright (c) 2026. Gabriel Paes", 400, 220, GetColorYellow(), true);
+            RenderText(renderer, nullptr, Tr("Contato: gabrielpaesdev@proton.me","Contact: gabrielpaesdev@proton.me"), 400, 260, GetColorGreen(), true);
+            RenderText(renderer, nullptr, Tr("Licenciado sob a GNU GPL v3", "Licensed under GNU GPL v3"), 400, 340, primaryText, true);
+            RenderText(renderer, nullptr, Tr("Veja o arquivo LICENSE para mais detalhes", "See LICENSE file for details"), 400, 380, primaryText, true);
+
             RenderText(renderer, nullptr, Tr("Voltar", "Back"), 400, 480, primaryText, true);
         }
         else if (appState == STATE_PLAYING) {
