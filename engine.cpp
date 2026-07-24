@@ -3,7 +3,7 @@
 #include "sfx.h"
 #include <thread>
 
-std::string BUILD_VERSION = "v1.1.0";
+std::string BUILD_VERSION = "v1.1.1";
 bool isDarkMode = true;
 bool soundEnabled = true;
 Language currentLang = LANG_EN;
